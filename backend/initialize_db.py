@@ -17,8 +17,8 @@ cursor  = db.cursor ()
 
 # create a table for storing users
 cursor.execute (f'''CREATE TABLE users (
-                    email       TEXT,
-                    phone       VARCHAR (10),
+                    email       VARCHAR (96)        UNIQUE,
+                    phone       VARCHAR (10)        UNIQUE,
                     name        TEXT,
                     password    CHAR ({hashlen}),
                     uuid        CHAR ({hashlen}),
