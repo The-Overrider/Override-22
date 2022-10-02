@@ -194,26 +194,178 @@ def get_requests ():
     """
     Returns the friend requests of a user
     """
-    pass
 
-@app.route ("/finishrequest", methods=["POST"])
-def finish_request ():
+    email   = request.args.get ("email", default = None)
+    phone   = request.args.get ("phone", default = None)
+
+    data    = {}
+
+    if email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{email}\"''')
+
+    elif phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users   = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid    = users[0][4]
+
+    cursor.execute (f'''SELECT * FROM friend_requests WHERE reciever = \"{uuid}\"''')
+    data["requests"] = [relation[0] for relation in cursor.fetchall ()]
+
+    return jsonify (data), 200
+
+@app.route ("/addfriend", methods=["POST"])
+def add_friend ():
     """
-    Accepts/Ignores a friend request as specified by the user
+    Accepts a friend request as specified by the user
     """
-    pass
+
+    sender_email    = request.args.get ("sender_email", default = None)
+    sender_phone    = request.args.get ("sender_phone", default = None)
+
+    reciever_email  = request.args.get ("reciever_email", default = None)
+    reciever_phone  = request.args.get ("reciever_phone", default = None)
+
+    removereq       = request.args.get ("removereq", default = "true")
+
+    data            = {}
+
+
+    if sender_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{sender_email}\"''')
+
+    elif sender_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{sender_phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given for sender!"
+        return jsonify (data), 400
+
+    senders         = cursor.fetchall ()
+    if len (senders) <= 0:
+        data["msg"] = "No user matching the sender could be found!"
+        return jsonify (data), 400
+    sender_uuid     = senders[0][4]
+
+
+    if reciever_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{reciever_email}\"''')
+
+    elif reciever_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{reciever_phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given for reciever!"
+        return jsonify (data), 400
+
+    recievers      = cursor.fetchall ()
+    if len (recievers) <= 0:
+        data["msg"] = "No user matching the reciever could be found!"
+        return jsonify (data), 400
+    reciever_uuid   = recievers[0][4]
+
+    cursor.execute (f'''SELECT * FROM friends WHERE
+                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{reciever_uuid}\") OR
+                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{reciever_uuid}\");''')
+
+    exists = cursor.fetchall ()
+
+    if len (exists) <= 0:
+        cursor.execute (f'''INSERT INTO friends VALUES (
+            \"{sender_uuid}\",
+            \"{reciever_uuid}\"
+        );''')
+        con.commit ()
+
+    if removereq == "true":
+        cursor.execute (f'''DELETE * FROM friend_requests WHERE
+                        sender=\"{sender_uuid}\" AND reciever=\"{reciever_uuid}\";''')
+
+    data["msg"] = "Success!"
+    return jsonify (data), 200
+
+@app.route ("/remfriend", methods=["POST"])
+def rem_friend ():
+    """
+    Ignores a friend request as specified by the user
+    """
+
+    sender_email    = request.args.get ("sender_email", default = None)
+    sender_phone    = request.args.get ("sender_phone", default = None)
+
+    reciever_email  = request.args.get ("reciever_email", default = None)
+    reciever_phone  = request.args.get ("reciever_phone", default = None)
+
+    removereq       = request.args.get ("removereq", default = "true")
+
+    data            = {}
+
+
+    if sender_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{sender_email}\"''')
+
+    elif sender_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{sender_phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given for sender!"
+        return jsonify (data), 400
+
+    senders         = cursor.fetchall ()
+    if len (senders) <= 0:
+        data["msg"] = "No user matching the sender could be found!"
+        return jsonify (data), 400
+    sender_uuid     = senders[0][4]
+
+
+    if reciever_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{reciever_email}\"''')
+
+    elif reciever_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{reciever_phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given for reciever!"
+        return jsonify (data), 400
+
+    recievers      = cursor.fetchall ()
+    if len (recievers) <= 0:
+        data["msg"] = "No user matching the reciever could be found!"
+        return jsonify (data), 400
+    reciever_uuid   = recievers[0][4]
+
+    cursor.execute (f'''SELECT * FROM friends WHERE
+                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{reciever_uuid}\") OR
+                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{reciever_uuid}\");''')
+
+    exists = cursor.fetchall ()
+
+    if len (exists) > 0:
+        cursor.execute (f'''DELETE FROM friends WHERE
+                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{reciever_uuid}\") OR
+                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{reciever_uuid}\");''')
+        con.commit ()
+
+    if removereq == "true":
+        cursor.execute (f'''DELETE * FROM friend_requests WHERE
+                        sender=\"{sender_uuid}\" AND reciever=\"{reciever_uuid}\";''')
+
+    data["msg"] = "Success!"
+    return jsonify (data), 200
 
 @app.route ("/sendrequest", methods=["POST"])
 def send_request ():
     """
     Sends a request from one user to another as specified by the user
-    """
-    pass
-
-@app.route ("/removefriend", methods=["POST"])
-def remove_friend ():
-    """
-    Removed the friend relationship between two users
     """
     pass
 
