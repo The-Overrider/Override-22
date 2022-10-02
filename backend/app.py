@@ -134,7 +134,7 @@ def check_login ():
         cursor.execute (f'''SELECT * from users where email = \"{email}\";''')
         users   = cursor.fetchall ()
 
-    if phone is not None:
+    elif phone is not None:
         cursor.execute (f'''SELECT * from users where phone = \"{phone}\";''')
         users   = cursor.fetchall ()
 
