@@ -2,20 +2,10 @@
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#client_error_responses
 
 from flask import Flask
-from flask import render_template
 from flask import request
-from flask import abort
 from flask import jsonify
-from flask import url_for
 
 import mysql.connector
-
-import os
-import time
-import sys
-import pickle
-import bz2
-import base64
 
 hashlen                         = 64
 
@@ -514,8 +504,14 @@ def create_group ():
     cursor.execute (f'''INSERT INTO group_entries VALUES (
         \"{group_name}\",
         \"{uuid}\",
-        \"{group_name + uuid}"
+        \"{guid}\"
     );''')
+
+    cursor.execute (f'''INSERT INTO group_members VALUES (
+        \"{uuid}\",
+        \"{guid}\"
+    );''')
+
     con.commit ()
 
     data["msg"] = "Success!"
@@ -526,7 +522,35 @@ def get_groups ():
     """
     Returns the groups in which a user exists
     """
-    pass
+
+    email   = request.args.get ("email", default = None)
+    phone   = request.args.get ("phone", default = None)
+
+    data    = {}
+
+    if email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{email}\";''')
+
+    elif phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{phone}\";''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users   = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid    = users[0][4]
+
+    cursor.execute (f'''SELECT name, guid FROM group_entries WHERE creator=\"{uuid}\";''')
+    data["grps"] = cursor.fetchall ()
+
+    return jsonify (data), 201
+
 
 @app.route ("/viewgrouprequests", methods=["GET"])
 def get_group_requests ():
