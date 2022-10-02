@@ -463,6 +463,64 @@ def send_request ():
     data["msg"] = "Success!"
     return jsonify (data), 201
 
+@app.route ("/creategroup", methods=["POST"])
+def create_group ():
+    """
+    Creates a group as specified by the user
+    """
+
+    creator_email   = request.args.get ("email", default = None)
+    creator_phone   = request.args.get ("phone", default = None)
+
+    group_name      = request.args.get ("name", default = None)
+
+    data            = {}
+
+    if group_name is None:
+        data["msg"] = "Missing group name!"
+        return jsonify (data), 400
+
+    if creator_email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{creator_email}\";''')
+
+    elif creator_phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{creator_phone}\";''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users           = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid            = users[0][4]
+
+    cursor.execute (f'''SELECT * FROM group_entries WHERE name=\"{group_name}\" AND creator=\"{uuid}\";''')
+
+    if len (cursor.fetchall ()) > 0:
+        data["msg"] = "Group already exists!"
+        return jsonify (data), 401
+
+    guid            = uuid + group_name
+
+    if len (guid) < hashlen:
+        guid += ' ' * (hashlen - len (guid))
+    elif len (guid) > hashlen:
+        guid = guid[:hashlen]
+
+    cursor.execute (f'''INSERT INTO group_entries VALUES (
+        \"{group_name}\",
+        \"{uuid}\",
+        \"{group_name + uuid}"
+    );''')
+    con.commit ()
+
+    data["msg"] = "Success!"
+    return jsonify (data), 201
+
 @app.route ("/viewgroups", methods=["GET"])
 def get_groups ():
     """
@@ -477,8 +535,15 @@ def get_group_requests ():
     """
     pass
 
-@app.route ("/finishgrouprequest", methods=["POST"])
-def finish_group_request ():
+@app.route ("/acceptgrouprequest", methods=["POST"])
+def accept_group_request ():
+    """
+    Accepts/Ignores a group request as specified by the user
+    """
+    pass
+
+@app.route ("/ignoregrouprequest", methods=["POST"])
+def ignore_group_request ():
     """
     Accepts/Ignores a group request as specified by the user
     """
