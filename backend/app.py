@@ -149,7 +149,7 @@ def check_login ():
         users   = cursor.fetchall ()
 
     else:
-        data["msg"] = "Either password or email must be given!"
+        data["msg"] = "Either phone or email must be given!"
         return jsonify (data), 400
 
     # the length of the returned iterable should be non-zero (a user must be found)
@@ -164,7 +164,7 @@ def check_login ():
         return jsonify (data), 401
 
     data["msg"] = "Success!"
-    return jsonify (data), 200
+    return jsonify (data), 201
 
 @app.route ("/viewfriends", methods=["GET"])
 def get_friends ():
@@ -196,12 +196,19 @@ def get_friends ():
     uuid    = users[0][4]
 
     cursor.execute (f'''SELECT * FROM friends WHERE uuid1 = \"{uuid}\"''')
-    data["friends"] = [relation[1] for relation in cursor.fetchall ()]
+    uuids = [relation[1] for relation in cursor.fetchall ()]
 
     cursor.execute (f'''SELECT * FROM friends WHERE uuid2 = \"{uuid}\"''')
-    data["friends"] += [relation[0] for relation in cursor.fetchall ()]
+    uuids += [relation[0] for relation in cursor.fetchall ()]
 
-    return jsonify (data), 200
+    data["friends"] = []
+
+    for uuid in uuids:
+        cursor.execute (f'''SELECT name, email, phone FROM users WHERE uuid=\"{uuid}\"''')
+        user = cursor.fetchall ()[0]
+        data["friends"].append (user)
+
+    return jsonify (data), 201
 
 
 @app.route ("/viewrequests", methods=["GET"])
@@ -234,9 +241,16 @@ def get_requests ():
     uuid    = users[0][4]
 
     cursor.execute (f'''SELECT * FROM friend_requests WHERE receiver = \"{uuid}\"''')
-    data["requests"] = [relation[0] for relation in cursor.fetchall ()]
+    uuids = [relation[0] for relation in cursor.fetchall ()]
 
-    return jsonify (data), 200
+    data["requests"] = []
+
+    for uuid in uuids:
+        cursor.execute (f'''SELECT name, email, phone FROM users WHERE uuid=\"{uuid}\"''')
+        user = cursor.fetchall ()[0]
+        data["requests"].append (user)
+
+    return jsonify (data), 201
 
 @app.route ("/addfriend", methods=["POST"])
 def add_friend ():
@@ -306,7 +320,7 @@ def add_friend ():
                         sender=\"{sender_uuid}\" AND receiver=\"{receiver_uuid}\";''')
 
     data["msg"] = "Success!"
-    return jsonify (data), 200
+    return jsonify (data), 201
 
 @app.route ("/remfriend", methods=["POST"])
 def rem_friend ():
@@ -375,7 +389,7 @@ def rem_friend ():
                         sender=\"{sender_uuid}\" AND receiver=\"{receiver_uuid}\";''')
 
     data["msg"] = "Success!"
-    return jsonify (data), 200
+    return jsonify (data), 201
 
 @app.route ("/sendrequest", methods=["POST"])
 def send_request ():
@@ -447,7 +461,7 @@ def send_request ():
     con.commit ()
 
     data["msg"] = "Success!"
-    return jsonify (data), 200
+    return jsonify (data), 201
 
 @app.route ("/viewgroups", methods=["GET"])
 def get_groups ():
