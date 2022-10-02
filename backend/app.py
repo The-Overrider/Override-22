@@ -30,6 +30,21 @@ con                             = mysql.connector.connect (
 )
 cursor                          = con.cursor ()
 
+def get_uuid (_email, _phone):
+    if _email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{_email}\"''')
+
+    elif _phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{_phone}\"''')
+
+    else:
+        return None, -1
+
+    users   = cursor.fetchall ()
+    if len (users) <= 0:
+        return None, 0
+
+    return users[0], users[0][4]
 
 @app.route ("/register", methods=["POST"])
 def register_user ():
@@ -218,7 +233,7 @@ def get_requests ():
 
     uuid    = users[0][4]
 
-    cursor.execute (f'''SELECT * FROM friend_requests WHERE reciever = \"{uuid}\"''')
+    cursor.execute (f'''SELECT * FROM friend_requests WHERE receiver = \"{uuid}\"''')
     data["requests"] = [relation[0] for relation in cursor.fetchall ()]
 
     return jsonify (data), 200
@@ -232,8 +247,8 @@ def add_friend ():
     sender_email    = request.args.get ("sender_email", default = None)
     sender_phone    = request.args.get ("sender_phone", default = None)
 
-    reciever_email  = request.args.get ("reciever_email", default = None)
-    reciever_phone  = request.args.get ("reciever_phone", default = None)
+    receiver_email  = request.args.get ("receiver_email", default = None)
+    receiver_phone  = request.args.get ("receiver_phone", default = None)
 
     removereq       = request.args.get ("removereq", default = "true")
 
@@ -257,38 +272,38 @@ def add_friend ():
     sender_uuid     = senders[0][4]
 
 
-    if reciever_email is not None:
-        cursor.execute (f'''SELECT * FROM users where email=\"{reciever_email}\"''')
+    if receiver_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{receiver_email}\"''')
 
-    elif reciever_phone is not None:
-        cursor.execute (f'''SELECT * FROM users where phone=\"{reciever_phone}\"''')
+    elif receiver_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{receiver_phone}\"''')
 
     else:
-        data["msg"] = "Either email or phone must be given for reciever!"
+        data["msg"] = "Either email or phone must be given for receiver!"
         return jsonify (data), 400
 
-    recievers      = cursor.fetchall ()
-    if len (recievers) <= 0:
-        data["msg"] = "No user matching the reciever could be found!"
+    receivers      = cursor.fetchall ()
+    if len (receivers) <= 0:
+        data["msg"] = "No user matching the receiver could be found!"
         return jsonify (data), 400
-    reciever_uuid   = recievers[0][4]
+    receiver_uuid   = receivers[0][4]
 
     cursor.execute (f'''SELECT * FROM friends WHERE
-                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{reciever_uuid}\") OR
-                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{reciever_uuid}\");''')
+                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{receiver_uuid}\") OR
+                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{receiver_uuid}\");''')
 
     exists = cursor.fetchall ()
 
     if len (exists) <= 0:
         cursor.execute (f'''INSERT INTO friends VALUES (
             \"{sender_uuid}\",
-            \"{reciever_uuid}\"
+            \"{receiver_uuid}\"
         );''')
         con.commit ()
 
     if removereq == "true":
         cursor.execute (f'''DELETE * FROM friend_requests WHERE
-                        sender=\"{sender_uuid}\" AND reciever=\"{reciever_uuid}\";''')
+                        sender=\"{sender_uuid}\" AND receiver=\"{receiver_uuid}\";''')
 
     data["msg"] = "Success!"
     return jsonify (data), 200
@@ -302,8 +317,8 @@ def rem_friend ():
     sender_email    = request.args.get ("sender_email", default = None)
     sender_phone    = request.args.get ("sender_phone", default = None)
 
-    reciever_email  = request.args.get ("reciever_email", default = None)
-    reciever_phone  = request.args.get ("reciever_phone", default = None)
+    receiver_email  = request.args.get ("receiver_email", default = None)
+    receiver_phone  = request.args.get ("receiver_phone", default = None)
 
     removereq       = request.args.get ("removereq", default = "true")
 
@@ -327,37 +342,37 @@ def rem_friend ():
     sender_uuid     = senders[0][4]
 
 
-    if reciever_email is not None:
-        cursor.execute (f'''SELECT * FROM users where email=\"{reciever_email}\"''')
+    if receiver_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{receiver_email}\"''')
 
-    elif reciever_phone is not None:
-        cursor.execute (f'''SELECT * FROM users where phone=\"{reciever_phone}\"''')
+    elif receiver_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{receiver_phone}\"''')
 
     else:
-        data["msg"] = "Either email or phone must be given for reciever!"
+        data["msg"] = "Either email or phone must be given for receiver!"
         return jsonify (data), 400
 
-    recievers      = cursor.fetchall ()
-    if len (recievers) <= 0:
-        data["msg"] = "No user matching the reciever could be found!"
+    receivers      = cursor.fetchall ()
+    if len (receivers) <= 0:
+        data["msg"] = "No user matching the receiver could be found!"
         return jsonify (data), 400
-    reciever_uuid   = recievers[0][4]
+    receiver_uuid   = receivers[0][4]
 
     cursor.execute (f'''SELECT * FROM friends WHERE
-                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{reciever_uuid}\") OR
-                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{reciever_uuid}\");''')
+                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{receiver_uuid}\") OR
+                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{receiver_uuid}\");''')
 
     exists = cursor.fetchall ()
 
     if len (exists) > 0:
         cursor.execute (f'''DELETE FROM friends WHERE
-                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{reciever_uuid}\") OR
-                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{reciever_uuid}\");''')
+                        (uuid1=\"{sender_uuid}\" AND uuid2=\"{receiver_uuid}\") OR
+                        (uuid2=\"{sender_uuid}\" AND uuid1=\"{receiver_uuid}\");''')
         con.commit ()
 
     if removereq == "true":
         cursor.execute (f'''DELETE * FROM friend_requests WHERE
-                        sender=\"{sender_uuid}\" AND reciever=\"{reciever_uuid}\";''')
+                        sender=\"{sender_uuid}\" AND receiver=\"{receiver_uuid}\";''')
 
     data["msg"] = "Success!"
     return jsonify (data), 200
@@ -367,7 +382,72 @@ def send_request ():
     """
     Sends a request from one user to another as specified by the user
     """
-    pass
+
+    sender_email    = request.args.get ("sender_email", default = None)
+    sender_phone    = request.args.get ("sender_phone", default = None)
+
+    receiver_email  = request.args.get ("receiver_email", default = None)
+    receiver_phone  = request.args.get ("receiver_phone", default = None)
+
+    data            = {}
+
+    if sender_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{sender_email}\"''')
+
+    elif sender_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{sender_phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given for sender!"
+        return jsonify (data), 400
+
+    senders         = cursor.fetchall ()
+    if len (senders) <= 0:
+        data["msg"] = "No user matching the sender could be found!"
+        return jsonify (data), 400
+    sender_uuid     = senders[0][4]
+
+
+    if receiver_email is not None:
+        cursor.execute (f'''SELECT * FROM users where email=\"{receiver_email}\"''')
+
+    elif receiver_phone is not None:
+        cursor.execute (f'''SELECT * FROM users where phone=\"{receiver_phone}\"''')
+
+    else:
+        data["msg"] = "Either email or phone must be given for receiver!"
+        return jsonify (data), 400
+
+    receivers      = cursor.fetchall ()
+    if len (receivers) <= 0:
+        data["msg"] = "No user matching the receiver could be found!"
+        return jsonify (data), 400
+    receiver_uuid   = receivers[0][4]
+
+    cursor.execute (f'''SELECT * FROM friend_requests WHERE
+                        sender=\"{sender_uuid}\" AND receiver=\"{receiver_uuid}\";''')
+    reqs = cursor.fetchall ()
+
+    if len (reqs) > 0:
+        data["msg"] = "Already pending request!"
+        return jsonify (data), 401
+
+    cursor.execute (f'''SELECT * FROM friend_requests WHERE
+                        sender=\"{receiver_uuid}\" AND receiver=\"{sender_uuid}\";''')
+    reqs = cursor.fetchall ()
+
+    if len (reqs) > 0:
+        data["msg"] = "Accept incoming request instead!"
+        return jsonify (data), 401
+
+    cursor.execute (f'''INSERT INTO friend_requests VALUES (
+                        \"{sender_uuid}\",
+                        \"{receiver_uuid}\"
+    );''')
+    con.commit ()
+
+    data["msg"] = "Success!"
+    return jsonify (data), 200
 
 @app.route ("/viewgroups", methods=["GET"])
 def get_groups ():
@@ -399,6 +479,6 @@ def exit_group ():
 
 
 if __name__ == "__main__":
-    app.run (host = "localhost")
+    app.run (host = "localhost", debug = True)
     con.commit ()
     con.close ()
