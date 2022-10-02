@@ -8,7 +8,7 @@ from flask import abort
 from flask import jsonify
 from flask import url_for
 
-from flask_mysqldb import MySQL
+import mysql.connector
 
 import os
 import time
@@ -21,13 +21,13 @@ hashlen                         = 64
 
 app                             = Flask(__name__)
 
-app.config["MYSQL_HOST"]        = "localhost"
-app.config["MYSQL_USER"]        = "override"
-app.config["MYSQL_PASSWORD"]    = "override"
-app.config["MYSQL_DB"]          = "override"
+con                             = mysql.connector.connect (
+    host        = "localhost",
+    user        = "override",
+    password    = "override",
+    database    = "override"
 
-mysql                           = MySQL (app)
-con                             = mysql.connection
+)
 cursor                          = con.cursor ()
 
 
@@ -62,8 +62,8 @@ def register_user ():
         data["msg"] = "Password can not be empty!"
         return jsonify (data), 400
 
-    # hash the password to get a fixed length string of length 64 (for now just get concat the name and the password)
-    usr_hash = name + password
+    # hash the password to get a fixed length string of length 64
+    usr_hash = password
     if len (usr_hash) < hashlen:
         usr_hash = usr_hash[:hashlen]
     elif len (usr_hash) > hashlen:
@@ -75,11 +75,6 @@ def register_user ():
         uuid     = uuid[:hashlen]
     elif len (uuid) > hashlen:
         uuid     = (' ' * hashlen - len (uuid)) + uuid
-
-    # Check if a user with this number of email address can not exist in the database already
-    if len (cursor.execute (f'''SELECT * FROM users WHERE uuid={uuid}''')) != 0:
-        data["msg"] = "Duplicate user found!"
-        return jsonify (data), 409
 
     # Insert the user into the table
     try:
@@ -97,7 +92,7 @@ def register_user ():
         return jsonify (data), 400
 
     # If the user was created successfully, return normally
-    cursor.commit ()
+    con.commit ()
 
     data["msg"] = "Success!"
     return jsonify (data), 201
@@ -107,8 +102,54 @@ def register_user ():
 def check_login ():
     """
     Checks if a user's credentials while logging in are appropriate
+    Requires the user's email/phone, password
+
+    The details must be provided as arguments in the URL in the form of the following suffix
+        ?email=xyz&phone=xyz&password=xyz
+    Giving either the email or hte phone number is enough
+    If both are given, email takes precedence
     """
-    pass
+
+    email   = request.args.get ("email", default = None)
+    phone   = request.args.get ("phone", default = None)
+    password= request.args.get ("password", default = "")
+
+    data    = {}
+
+    users   = ()
+
+    # hash the password to get a fixed length string of length 64
+    usr_hash = password
+    if len (usr_hash) < hashlen:
+        usr_hash = usr_hash[:hashlen]
+    elif len (usr_hash) > hashlen:
+        usr_hash = (' ' * hashlen - len (usr_hash)) + usr_hash
+
+    if email is not None:
+        cursor.execute (f'''SELECT * from users where email = {email};''')
+        users   = cursor.fetchall ()
+
+    if phone is not None:
+        cursor.execute (f'''SELECT * from users where email = {email};''')
+        users   = cursor.fetchall ()
+
+    else:
+        data["msg"] = "Either password or email must be given!"
+        return jsonify (data), 400
+
+    # the length of the returned iterable should be non-zero (a user must be found)
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    # the given password and stored password should match
+    print (users[0][3], usr_hash)
+    if users[0][3] != usr_hash:
+        data["msg"] = "Incorrect Password!"
+        return jsonify (data), 401
+
+    data["msg"] = "Success!"
+    return jsonify (data), 200
 
 @app.route ("/viewfriends", methods=["GET"])
 def get_friends ():
@@ -174,6 +215,7 @@ def exit_group ():
     pass
 
 
-app.run (host = "localhost")
-mysql.commit ()
-mysql.close ()
+if __name__ == "__main__":
+    app.run (host = "localhost")
+    con.commit ()
+    con.close ()
