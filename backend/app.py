@@ -79,11 +79,11 @@ def register_user ():
     # Insert the user into the table
     try:
         cursor.execute (f'''INSERT INTO users VALUES (
-            {email},
-            {phone},
-            {name},
-            {usr_hash},
-            {uuid}
+            \"{email}\",
+            \"{phone}\",
+            \"{name}\",
+            \"{usr_hash}\",
+            \"{uuid}\"
         );''')
 
     except:
@@ -126,11 +126,11 @@ def check_login ():
         usr_hash = (' ' * hashlen - len (usr_hash)) + usr_hash
 
     if email is not None:
-        cursor.execute (f'''SELECT * from users where email = {email};''')
+        cursor.execute (f'''SELECT * from users where email = \"{email}\";''')
         users   = cursor.fetchall ()
 
     if phone is not None:
-        cursor.execute (f'''SELECT * from users where email = {email};''')
+        cursor.execute (f'''SELECT * from users where phone = \"{phone}\";''')
         users   = cursor.fetchall ()
 
     else:
