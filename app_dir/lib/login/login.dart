@@ -5,26 +5,26 @@ void main() => runApp(const CalendarApp());
 class CalendarApp extends StatelessWidget {
   const CalendarApp({Key? key}) : super(key: key);
 
-  static const String _title = 'Registration Page';
+  static const String _title = 'Login Page';
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: const Register(),
+        body: const Login(),
       ),
     );
   }
 }
 
-class Register extends StatefulWidget {
-  const Register({Key? key}) : super(key: key);
+class Login extends StatefulWidget {
+  const Login({Key? key}) : super(key: key);
 
   @override
-  State<Register> createState() => _MyStatefulWidgetState();
+  State<Login> createState() => _MyStatefulWidgetState();
 }
 
-class _MyStatefulWidgetState extends State<Register> {
+class _MyStatefulWidgetState extends State<Login> {
   TextEditingController nameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
@@ -47,7 +47,7 @@ class _MyStatefulWidgetState extends State<Register> {
             Container(
               alignment: Alignment.center,
               padding: const EdgeInsets.all(10),
-              child: const Text('Create an account',
+              child: const Text('Sign In',
                   style: TextStyle(
                     fontSize: 14,
                     color: Color.fromARGB(255, 110, 118, 121),
@@ -59,27 +59,7 @@ class _MyStatefulWidgetState extends State<Register> {
                 controller: nameController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  labelText: 'Email Id',
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'User Name',
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Phone Number',
+                  labelText: 'Email Id / Phone Number',
                 ),
               ),
             ),
@@ -106,14 +86,14 @@ class _MyStatefulWidgetState extends State<Register> {
                 )),
             Row(
               children: <Widget>[
-                const Text("Already have an account?"),
+                const Text("Don't have an account?"),
                 TextButton(
                   child: const Text(
-                    'Sign In',
+                    'Sign Up',
                     style: TextStyle(fontSize: 20),
                   ),
                   onPressed: () {
-                    //Login screen
+                    //signup screen
                   },
                 )
               ],
