@@ -75,8 +75,8 @@ cursor.execute (f'''CREATE TABLE friend_requests (
                     PRIMARY KEY (sender, receiver)
 );''')
 
-# add index for quickly querying the requests recieved by a user
-cursor.execute (f'''CREATE INDEX requests_recieved ON friend_requests (
+# add index for quickly querying the requests received by a user
+cursor.execute (f'''CREATE INDEX requests_received ON friend_requests (
                     receiver
 );''')
 
@@ -90,8 +90,8 @@ cursor.execute (f'''CREATE TABLE group_requests (
                     PRIMARY KEY (receiver, guid)
 );''')
 
-# add index for quickly querying the requests recieved by a user
-cursor.execute (f'''CREATE INDEX group_requests_recieved ON group_requests (
+# add index for quickly querying the requests received by a user
+cursor.execute (f'''CREATE INDEX group_requests_received ON group_requests (
                     receiver
 );''')
 
