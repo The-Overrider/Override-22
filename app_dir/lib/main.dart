@@ -10,6 +10,10 @@ void main() {
   );
 }
 
+String EMAIL  = "";
+String PHONE  = "";
+String NAME   = "";
+
 class CalendarApp extends StatefulWidget {
   @override
   _CalendarAppState createState() => _CalendarAppState();
@@ -18,6 +22,7 @@ class CalendarApp extends StatefulWidget {
 class _CalendarAppState extends State<CalendarApp> {
   TextEditingController textController1 = TextEditingController();
   TextEditingController textController2 = TextEditingController();
+  
   String email = "";
   String pwd = "";
 
@@ -83,6 +88,9 @@ class _CalendarAppState extends State<CalendarApp> {
                           pwd = textController2.text;
         
                         });
+
+                        EMAIL = textController1.text;
+                        PHONE = textController2.text;
 
                         // Navigator.push(
                         //      context,
@@ -566,10 +574,10 @@ class _GroupsPageState extends State<GroupsPage> {
                   ],
                 )
               ]),
-              Text("Friend 1"),
-              Text("Friend 1"),
-              Text("Friend 1"),
-              Text("Friend 1")
+              // Text("Friend 1"),
+              // Text("Friend 1"),
+              // Text("Friend 1"),
+              // Text("Friend 1")
             ])));
   }
 }
@@ -753,6 +761,8 @@ class AddPage extends StatefulWidget {
 }
 
 class _AddPageState extends State<AddPage> {
+  String email = "";
+  TextEditingController addFriend = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -763,7 +773,9 @@ class _AddPageState extends State<AddPage> {
           children: <Widget>[
             Padding(
               padding: EdgeInsets.all(20),
+              
               child: TextField(
+                controller: addFriend,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: "Enter email id",
@@ -781,7 +793,20 @@ class _AddPageState extends State<AddPage> {
                 ),
                 child: Text("Add Friend"),
                 onPressed: () {
-                  // Respond to button press
+
+                  setState((){
+                          email = addFriend.text;
+                        });
+                  var response = http.post(Uri.parse('http://localhost:5000/sendrequest?sender_email=${EMAIL}&receiver_email=${email}'));
+
+                  response.then ((resp) {
+                    if (resp.statusCode == 201) {
+                      print ("Successfully sent friend request");
+                    }
+                    else {
+                      print ("No such user exists");
+                    }
+                  });
                 },
               ),
             )
