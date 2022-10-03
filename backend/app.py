@@ -644,14 +644,96 @@ def join_group ():
     """
     Accepts/Ignores a group request as specified by the user
     """
-    pass
+
+    email       = request.args.get ("email", default = None)
+    phone       = request.args.get ("phone", default = None)
+
+    guid        = request.args.get ("guid", default = None)
+    removereq   = request.args.get ("removereq", default = "true")
+
+    data    = {}
+
+    if guid is None:
+        data["msg"] = "Please provide a guid"
+        return jsonify (data), 400
+
+    if email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{email}\";''')
+
+    elif phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{phone}\";''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users   = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid    = users[0][4]
+
+    cursor.execute (f'''INSERT INTO group_members VALUES (
+        \"{uuid}\",
+        \"{guid}\"
+        );''')
+
+    if removereq == "true":
+        cursor.execute (f'''DELETE FROM group_requests WHERE receiver=\"{uuid}\" AND guid=\"{guid}\"''')
+
+    con.commit ()
+
+    data["msg"] = "Success!"
+    return jsonify (data), 201
+
 
 @app.route ("/exitgroup", methods=["POST"])
 def exit_group ():
     """
     Accepts/Ignores a group request as specified by the user
     """
-    pass
+
+    email       = request.args.get ("email", default = None)
+    phone       = request.args.get ("phone", default = None)
+
+    guid        = request.args.get ("guid", default = None)
+    removereq   = request.args.get ("removereq", default = "true")
+
+    data    = {}
+
+    if guid is None:
+        data["msg"] = "Please provide a guid"
+        return jsonify (data), 400
+
+    if email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{email}\";''')
+
+    elif phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{phone}\";''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users   = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid    = users[0][4]
+
+    cursor.execute (f'''DELETE FROM group_members WHERE uuid=\"{uuid}\" AND guid=\"{guid}\";''')
+
+    if removereq == "true":
+        cursor.execute (f'''DELETE FROM group_requests WHERE receiver=\"{uuid}\" AND guid=\"{guid}\"''')
+
+    con.commit ()
+
+    data["msg"] = "Success!"
+    return jsonify (data), 201
 
 
 if __name__ == "__main__":
