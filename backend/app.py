@@ -557,17 +557,90 @@ def get_group_requests ():
     """
     Returns the group requests of a user
     """
-    pass
 
-@app.route ("/acceptgrouprequest", methods=["POST"])
-def accept_group_request ():
-    """
-    Accepts/Ignores a group request as specified by the user
-    """
-    pass
+    email   = request.args.get ("email", default = None)
+    phone   = request.args.get ("phone", default = None)
 
-@app.route ("/ignoregrouprequest", methods=["POST"])
-def ignore_group_request ():
+    data    = {}
+
+    if email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{email}\";''')
+
+    elif phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{phone}\";''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users   = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid    = users[0][4]
+
+    cursor.execute (f'''SELECT group_entries.name, group_requests.guid FROM group_requests, group_entries WHERE
+                        group_requests.guid=group_entries.guid AND receiver=\"{uuid}\"''')
+    data["requests"]    = cursor.fetchall ()
+
+    return jsonify (data), 201
+
+@app.route ("/sendgrouprequest", methods=["POST"])
+def send_group_request ():
+    """
+    Sends a group join request to one member
+    """
+
+    email   = request.args.get ("email", default = None)
+    phone   = request.args.get ("phone", default = None)
+
+    guid    = request.args.get ("guid", default = None)
+
+    data    = {}
+
+    if guid is None:
+        data["msg"] = "Please provide a guid"
+        return jsonify (data), 400
+
+    if email is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE email=\"{email}\";''')
+
+    elif phone is not None:
+        cursor.execute (f'''SELECT * FROM users WHERE phone=\"{phone}\";''')
+
+    else:
+        data["msg"] = "Either email or phone must be given!"
+        return jsonify (data), 400
+
+    users   = cursor.fetchall ()
+
+    if len (users) <= 0:
+        data["msg"] = "No user found!"
+        return jsonify (data), 400
+
+    uuid    = users[0][4]
+
+    try:
+        cursor.execute (f'''INSERT INTO group_requests VALUES (
+            \"{uuid}\",
+            \"{guid}\"
+        );''')
+
+    except:
+        data["msg"] = "Request already exists"
+        return jsonify (data), 400
+
+    con.commit ()
+
+    data["msg"] = "Success!"
+
+    return jsonify (data), 400
+
+
+@app.route ("/joingroup", methods=["POST"])
+def join_group ():
     """
     Accepts/Ignores a group request as specified by the user
     """
@@ -576,7 +649,7 @@ def ignore_group_request ():
 @app.route ("/exitgroup", methods=["POST"])
 def exit_group ():
     """
-    Removes a user from the groups (deletes group information if the group has no more members left)
+    Accepts/Ignores a group request as specified by the user
     """
     pass
 
