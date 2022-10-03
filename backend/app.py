@@ -515,6 +515,7 @@ def create_group ():
     con.commit ()
 
     data["msg"] = "Success!"
+    data["guid"] = guid
     return jsonify (data), 201
 
 @app.route ("/viewgroups", methods=["GET"])
